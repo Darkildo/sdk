@@ -112,6 +112,42 @@ void f<T extends num>(T a) {
     );
   }
 
+  test_void_list() async {
+    await assertErrorsInCode(
+      '''
+main() {
+  void e = <void>[];
+  <void>[...e];
+}
+''',
+      [error(diag.useOfVoidResult, 42, 1)],
+    );
+  }
+
+  test_void_list_nullAware() async {
+    await assertErrorsInCode(
+      '''
+main() {
+  void e = <void>[];
+  <void>[...?e];
+}
+''',
+      [error(diag.useOfVoidResult, 43, 1)],
+    );
+  }
+
+  test_void_set() async {
+    await assertErrorsInCode(
+      '''
+main() {
+  void e = <void>[];
+  <void>{...e};
+}
+''',
+      [error(diag.useOfVoidResult, 42, 1)],
+    );
+  }
+
   test_spread_map_in_iterable_context() async {
     await assertErrorsInCode(
       '''

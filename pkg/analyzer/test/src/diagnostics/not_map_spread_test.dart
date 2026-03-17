@@ -98,6 +98,30 @@ void f<T extends num>(T a) {
       [error(diag.notMapSpread, 53, 1)],
     );
   }
+
+  test_void_map() async {
+    await assertErrorsInCode(
+      '''
+main() {
+  void e = <void>[];
+  <String, int>{...e};
+}
+''',
+      [error(diag.useOfVoidResult, 49, 1)],
+    );
+  }
+
+  test_void_map_nullAware() async {
+    await assertErrorsInCode(
+      '''
+main() {
+  void e = <void>[];
+  <String, int>{...?e};
+}
+''',
+      [error(diag.useOfVoidResult, 50, 1)],
+    );
+  }
 }
 
 @reflectiveTest
