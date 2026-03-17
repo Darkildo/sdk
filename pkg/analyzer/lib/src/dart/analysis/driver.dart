@@ -1999,6 +1999,7 @@ class AnalysisDriver {
       keyBuilder.addString(file.uriStr);
       keyBuilder.addString(file.contentHash);
     }
+    library.appendReferencedLibrariesSignature(keyBuilder);
 
     var key = '${keyBuilder.toHex()}.resolved2';
     return library.diagnosticsBundleKey = key;

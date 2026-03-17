@@ -246,6 +246,10 @@ class _LibraryWalker extends graph.DependencyWalker<_LibraryNode> {
         manifestBuilder.addString(file.uriStr);
         apiSignatureBuilder.addBytes(file.apiSignature);
       }
+      for (var library in libraries) {
+        apiSignatureBuilder.addString(library.file.uriStr);
+        library.appendReferencedLibrariesSignature(apiSignatureBuilder);
+      }
       manifestSignature = manifestBuilder.toHex();
       nonTransitiveApiSignature = apiSignatureBuilder.toHex();
     }

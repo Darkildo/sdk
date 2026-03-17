@@ -5943,6 +5943,106 @@ class FineAnalysisDriverTest extends PubPackageResolutionTest
     return super.tearDown();
   }
 
+  test_changeImported_libraryBecomesPartAndBack_packageImport() async {
+    var imported = newFile('$testPackageLibPath/data.gen.dart', r'''
+const myData = 'hello world';
+''');
+
+    var user = newFile('$testPackageLibPath/user.dart', r'''
+import 'package:test/data.gen.dart';
+void main() {
+  print(myData);
+}
+''');
+
+    var driver = driverFor(user);
+
+    Future<ErrorsResult> getErrors() async {
+      var result = await driver.getErrors(user.path);
+      expect(result, isA<ErrorsResult>());
+      return result as ErrorsResult;
+    }
+
+    void assertErrorCodes(ErrorsResult result, List<String> expected) {
+      expect(
+        result.diagnostics
+            .map((diagnostic) => diagnostic.diagnosticCode.lowerCaseName)
+            .toList(),
+        unorderedEquals(expected),
+      );
+    }
+
+    assertErrorCodes(await getErrors(), const []);
+
+    modifyFile2(imported, r'''
+part of 'data.dart';
+const myData = 'hello world';
+''');
+    driver.changeFile2(imported);
+
+    assertErrorCodes(await getErrors(), const [
+      'import_of_non_library',
+      'undefined_identifier',
+    ]);
+
+    modifyFile2(imported, r'''
+const myData = 'hello world';
+''');
+    driver.changeFile2(imported);
+
+    assertErrorCodes(await getErrors(), const []);
+  }
+
+  test_changeImported_libraryBecomesPart_samePackage_noCrash() async {
+    var imported = newFile('$testPackageLibPath/data.gen.dart', r'''
+const myData = 'hello world';
+''');
+
+    var user = newFile('$testPackageLibPath/user.dart', r'''
+import 'data.gen.dart';
+void main() {
+  print(myData);
+}
+''');
+
+    var driver = driverFor(user);
+
+    Future<ErrorsResult> getErrors() async {
+      var result = await driver.getErrors(user.path);
+      expect(result, isA<ErrorsResult>());
+      return result as ErrorsResult;
+    }
+
+    void assertErrorCodes(ErrorsResult result, List<String> expected) {
+      expect(
+        result.diagnostics
+            .map((diagnostic) => diagnostic.diagnosticCode.lowerCaseName)
+            .toList(),
+        unorderedEquals(expected),
+      );
+    }
+
+    assertErrorCodes(await getErrors(), const []);
+
+    modifyFile2(imported, r'''
+part of 'data.dart';
+const myData = 'hello world';
+''');
+    driver.changeFile2(imported);
+
+    assertErrorCodes(await getErrors(), const [
+      'import_of_non_library',
+      'undefined_identifier',
+    ]);
+
+    modifyFile2(imported, r'''
+const myData = 'hello world';
+''');
+    driver.changeFile2(imported);
+
+    assertErrorCodes(await getErrors(), const []);
+  }
+
   test_dependency_class_add_allSubtypes_final_related() async {
     configuration
       ..withGetErrorsEvents = false
@@ -37919,14 +38019,11 @@ import 'a.dart';
     hashForRequirements: #H2
     exportMapId: #M0
   requirements
-[operation] reuseLinkedBundle
+[operation] linkLibraryCycle
   package:test/test.dart
-[operation] checkLibraryDiagnosticsRequirements
-  library: /home/test/lib/test.dart
-  libraryIsOriginNotExistingFileMismatch
-    libraryUri: package:test/a.dart
-    expected: true
-    actual: false
+    hashForRequirements: #H1
+    exportMapId: #M1
+  requirements
 [operation] analyzeFile
   file: /home/test/lib/test.dart
   library: /home/test/lib/test.dart

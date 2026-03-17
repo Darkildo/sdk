@@ -80,6 +80,63 @@ class DirectiveUris {
   });
 }
 
+enum ReferencedLibraryResolutionKind {
+  uriWithInterpolation,
+  invalidUri,
+  unresolved,
+  missingGeneratedFile,
+  missingFile,
+  nonLibrary,
+  library,
+}
+
+void _appendReferencedLibrarySignature({
+  required ApiSignature signature,
+  required FileState containerFile,
+  required DirectiveUri selectedUri,
+  required Source? source,
+  required Source? librarySource,
+  required bool isMissingFile,
+}) {
+  ReferencedLibraryResolutionKind kind;
+  switch (selectedUri) {
+    case DirectiveUriWithoutString():
+      kind = ReferencedLibraryResolutionKind.uriWithInterpolation;
+    case DirectiveUriWithString() when selectedUri is! DirectiveUriWithUri:
+      kind = ReferencedLibraryResolutionKind.invalidUri;
+    default:
+      if (source == null) {
+        kind = ReferencedLibraryResolutionKind.unresolved;
+      } else if (isMissingFile) {
+        kind = file_paths.isGenerated(source.fullName)
+            ? ReferencedLibraryResolutionKind.missingGeneratedFile
+            : ReferencedLibraryResolutionKind.missingFile;
+      } else if (librarySource == null) {
+        kind = ReferencedLibraryResolutionKind.nonLibrary;
+      } else {
+        kind = ReferencedLibraryResolutionKind.library;
+      }
+  }
+
+  signature.addInt(kind.index);
+  switch (selectedUri) {
+    case DirectiveUriWithFile():
+      signature.addString(selectedUri.file.uriStr);
+    case DirectiveUriWithInSummarySource():
+      signature.addString(selectedUri.source.uri.toString());
+    case DirectiveUriWithUri():
+      signature.addString(
+        uriCache
+            .resolveRelative(containerFile.uri, selectedUri.relativeUri)
+            .toString(),
+      );
+    case DirectiveUriWithString():
+      signature.addString(selectedUri.relativeUriStr);
+    case DirectiveUriWithoutString():
+      signature.addString('');
+  }
+}
+
 /// [DirectiveUriWithUri] with URI that resolves to a [FileState].
 final class DirectiveUriWithFile extends DirectiveUriWithSource {
   final FileState file;
@@ -344,6 +401,23 @@ abstract class FileKind {
     libraryImports;
     partIncludes;
     docLibraryImports;
+  }
+
+  void appendDirectiveResolutionSignature(ApiSignature signature) {
+    signature.addInt(libraryExports.length);
+    for (var directive in libraryExports) {
+      directive.appendResolutionSignature(signature);
+    }
+
+    signature.addInt(libraryImports.length);
+    for (var directive in libraryImports) {
+      directive.appendResolutionSignature(signature);
+    }
+
+    signature.addInt(docLibraryImports.length);
+    for (var directive in docLibraryImports) {
+      directive.appendResolutionSignature(signature);
+    }
   }
 
   @mustCallSuper
@@ -1683,6 +1757,19 @@ final class LibraryExportState<U extends DirectiveUri> extends DirectiveState {
   /// Returns `null` if the selected URI is not valid, or cannot be resolved
   /// into a [Source].
   Source? get exportedSource => null;
+
+  bool get isMissingFile => false;
+
+  void appendResolutionSignature(ApiSignature signature) {
+    _appendReferencedLibrarySignature(
+      signature: signature,
+      containerFile: container.file,
+      selectedUri: selectedUri,
+      source: exportedSource,
+      librarySource: exportedLibrarySource,
+      isMissingFile: isMissingFile,
+    );
+  }
 }
 
 /// [LibraryExportWithUri] that has a valid URI that references a file.
@@ -1718,6 +1805,9 @@ final class LibraryExportWithFile
 
   @override
   FileSource get exportedSource => exportedFile.source;
+
+  @override
+  bool get isMissingFile => !exportedFile.exists;
 
   @override
   void dispose() {
@@ -1861,6 +1951,15 @@ class LibraryFileKind extends LibraryOrAugmentationFileKind {
     return _libraryCycle!;
   }
 
+  void appendReferencedLibrariesSignature(ApiSignature signature) {
+    var fileKinds = this.fileKinds;
+    signature.addInt(fileKinds.length);
+    for (var fileKind in fileKinds) {
+      signature.addString(fileKind.file.uriStr);
+      fileKind.appendDirectiveResolutionSignature(signature);
+    }
+  }
+
   @override
   List<UnlinkedLibraryImportDirective> get _unlinkedDocImports {
     return file.unlinked2.libraryDirective?.docImports ?? const [];
@@ -1920,6 +2019,19 @@ final class LibraryImportState<U extends DirectiveUri> extends DirectiveState {
   bool get isDocImport => unlinked.isDocImport;
 
   bool get isSyntheticDartCore => unlinked.isSyntheticDartCore;
+
+  bool get isMissingFile => false;
+
+  void appendResolutionSignature(ApiSignature signature) {
+    _appendReferencedLibrarySignature(
+      signature: signature,
+      containerFile: container.file,
+      selectedUri: selectedUri,
+      source: importedSource,
+      librarySource: importedLibrarySource,
+      isMissingFile: isMissingFile,
+    );
+  }
 }
 
 /// [LibraryImportWithUri] that has a valid URI that references a file.
@@ -1955,6 +2067,9 @@ final class LibraryImportWithFile
 
   @override
   FileSource get importedSource => importedFile.source;
+
+  @override
+  bool get isMissingFile => !importedFile.exists;
 
   @override
   void dispose() {
