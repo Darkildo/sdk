@@ -16743,6 +16743,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     Expression? expr;
     if (member is Procedure && member.kind == ProcedureKind.Method) {
+      ensureMemberType(member);
       // The shorthand expression is inferred in the empty context and then type
       // inference infers the type arguments.
       FunctionType functionType = member.function.computeThisFunctionType(
@@ -16796,6 +16797,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       }
 
       if (constructor is Constructor) {
+        ensureMemberType(constructor);
         if (!constructor.isConst && node.isConst) {
           return new ExpressionInferenceResult(
             const DynamicType(),
@@ -16854,6 +16856,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           result.applyResult(expr),
         );
       } else if (constructor is Procedure) {
+        ensureMemberType(constructor);
         // [constructor] can be a [Procedure] if we have an extension type
         // constructor or a redirecting factory constructor.
         if (!constructor.isConst && node.isConst) {
@@ -16916,6 +16919,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     if (member != null &&
         (member is Field || (member is Procedure && member.isGetter))) {
+      ensureMemberType(member);
       // Try to find a `.call()`.
       DartType receiverType = member.getterType;
       Expression receiver = new StaticGet(member)..fileOffset = node.fileOffset;
@@ -17005,6 +17009,9 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       node.name,
       node.fileOffset,
     );
+    if (member != null) {
+      ensureMemberType(member);
+    }
     ExpressionInferenceResult expressionInferenceResult;
     switch (member) {
       case Field():
@@ -17051,6 +17058,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
             );
           }
           if (constructor is Constructor) {
+            ensureMemberType(constructor);
             TypeDeclaration typeDeclaration = cachedContext.typeDeclaration;
             if (typeDeclaration is Class && typeDeclaration.isAbstract) {
               return new ExpressionInferenceResult(
@@ -17072,6 +17080,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
               ..fileOffset = node.fileOffset;
             return instantiateTearOff(type, typeContext, tearOff);
           } else if (constructor is Procedure) {
+            ensureMemberType(constructor);
             DartType type = constructor.function.computeFunctionType(
               Nullability.nonNullable,
             );
