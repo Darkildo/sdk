@@ -115,9 +115,8 @@ void f<T extends num>(T a) {
   test_void_list() async {
     await assertErrorsInCode(
       '''
-main() {
-  void e = <void>[];
-  <void>[...e];
+void f(void e) {
+  [...e];
 }
 ''',
       [error(diag.useOfVoidResult, 42, 1)],
