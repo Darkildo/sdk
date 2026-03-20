@@ -65,6 +65,7 @@ class NullableDereferenceVerifier {
   ) {
     if (receiverType is DynamicType ||
         receiverType is InvalidType ||
+        receiverType is VoidType ||
         !_typeSystem.isPotentiallyNullable(receiverType)) {
       return false;
     }

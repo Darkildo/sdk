@@ -4142,7 +4142,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     );
     popRewrite();
 
-    if (!node.isNullAware && node.expression.typeOrThrow is! VoidType) {
+    if (!node.isNullAware) {
       nullableDereferenceVerifier.expression(
         diag.uncheckedUseOfNullableValueInSpread,
         node.expression,
