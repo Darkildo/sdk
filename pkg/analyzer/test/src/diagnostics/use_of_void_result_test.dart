@@ -821,4 +821,37 @@ dynamic f(void x) sync* {
       [error(diag.useOfVoidResult, 34, 1)],
     );
   }
+
+  test_void_list_nullAware() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  [...?e];
+}
+''',
+      [error(diag.useOfVoidResult, 43, 1)],
+    );
+  }
+
+  test_void_list() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  [...e];
+}
+''',
+      [error(diag.useOfVoidResult, 42, 1)],
+    );
+  }
+
+  test_void_set() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  {...e};
+}
+''',
+      [error(diag.useOfVoidResult, 42, 1)],
+    );
+  }
 }
