@@ -461,10 +461,7 @@ void f(void x, y) {
   for (y in x) {}
 }
 ''',
-      [
-        error(diag.uncheckedUseOfNullableValueAsIterator, 32, 1),
-        error(diag.useOfVoidResult, 32, 1),
-      ],
+      [error(diag.useOfVoidResult, 32, 1)],
     );
   }
 
@@ -477,7 +474,6 @@ void f(void x) {
 ''',
       [
         error(diag.unusedLocalVariable, 28, 1),
-        error(diag.uncheckedUseOfNullableValueAsIterator, 33, 1),
         error(diag.useOfVoidResult, 33, 1),
       ],
     );
@@ -770,6 +766,39 @@ class A {
     );
   }
 
+  test_void_list() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  [...e];
+}
+''',
+      [error(diag.useOfVoidResult, 23, 1)],
+    );
+  }
+
+  test_void_list_nullAware() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  [...?e];
+}
+''',
+      [error(diag.useOfVoidResult, 24, 1)],
+    );
+  }
+
+  test_void_set() async {
+    await assertErrorsInCode(
+      '''
+void f(void e) {
+  <Object?>{...e};
+}
+''',
+      [error(diag.useOfVoidResult, 32, 1)],
+    );
+  }
+
   test_yieldStarVoid_asyncStar() async {
     await assertErrorsInCode(
       '''
@@ -778,7 +807,6 @@ Object? f(void x) async* {
 }
 ''',
       [
-        error(diag.uncheckedUseOfNullableValueInYieldEach, 36, 1),
         error(diag.yieldEachOfInvalidType, 36, 1),
         error(diag.useOfVoidResult, 36, 1),
       ],
@@ -793,7 +821,6 @@ Object? f(void x) sync* {
 }
 ''',
       [
-        error(diag.uncheckedUseOfNullableValueInYieldEach, 35, 1),
         error(diag.yieldEachOfInvalidType, 35, 1),
         error(diag.useOfVoidResult, 35, 1),
       ],
@@ -819,39 +846,6 @@ dynamic f(void x) sync* {
 }
 ''',
       [error(diag.useOfVoidResult, 34, 1)],
-    );
-  }
-
-  test_void_list_nullAware() async {
-    await assertErrorsInCode(
-      '''
-void f(void e) {
-  [...?e];
-}
-''',
-      [error(diag.useOfVoidResult, 43, 1)],
-    );
-  }
-
-  test_void_list() async {
-    await assertErrorsInCode(
-      '''
-void f(void e) {
-  [...e];
-}
-''',
-      [error(diag.useOfVoidResult, 42, 1)],
-    );
-  }
-
-  test_void_set() async {
-    await assertErrorsInCode(
-      '''
-void f(void e) {
-  {...e};
-}
-''',
-      [error(diag.useOfVoidResult, 42, 1)],
     );
   }
 }
